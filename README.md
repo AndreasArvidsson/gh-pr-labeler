@@ -30,10 +30,8 @@ name: PR labels
 on:
     pull_request:
         types: [opened, synchronize, reopened]
-
     pull_request_review:
-        types:
-            - submitted
+        types: [submitted]
 
 permissions:
     pull-requests: read
