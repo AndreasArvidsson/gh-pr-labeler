@@ -1,0 +1,42 @@
+name: Push tag
+
+on:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  push-tag:
+    name: Push Git tag
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Read version from package.json
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=v$VERSION" >> $GITHUB_ENV
+
+      - name: Check whether this version is already published
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${{ env.version }}" > /dev/null; then
+            echo "Version ${{ env.version }} is already tagged."
+            exit 1
+          fi
+
+      - name: Push Git tag
+        run: |
+          git tag "${{ env.version }}"
+          git push origin "${{ env.version }}"
