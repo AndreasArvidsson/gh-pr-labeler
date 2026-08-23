@@ -1,6 +1,6 @@
 # GitHub PR Labeler
 
-A reusable GitHub workflow that keeps pull request size and review-state labels up to date. Everything runs on GitHub Actions; consuming repositories do not need a server, configuration file, or dependency installation.
+A GitHub Action that keeps pull request size and review-state labels up to date. Everything runs on GitHub Actions; consuming repositories do not need a server, configuration file, or dependency installation.
 
 ## Labels
 
@@ -35,15 +35,19 @@ on:
         types:
             - submitted
 
+permissions:
+    pull-requests: read
+    issues: write
+
 jobs:
     labels:
-        uses: AndreasArvidsson/gh-pr-labeler/.github/workflows/pr-labeler.yml@v1
-        permissions:
-            pull-requests: read
-            issues: write
+        runs-on: ubuntu-latest
+        steps:
+            - name: Update PR labels
+              uses: AndreasArvidsson/gh-pr-labeler@v1
 ```
 
-The workflow uses the caller's `GITHUB_TOKEN`. It only needs `pull-requests: read` to inspect the PR and `issues: write` because GitHub manages PR labels through the Issues API.
+The action uses the workflow's `GITHUB_TOKEN`. It only needs `pull-requests: read` to inspect the PR and `issues: write` because GitHub manages PR labels through the Issues API.
 
 ## Development
 
