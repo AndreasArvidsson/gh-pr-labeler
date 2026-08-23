@@ -22,9 +22,8 @@ export function getLabelTransition(
             action === "reopened" ||
             action === "synchronize")
     ) {
-        const sizeLabel = getSizeLabel(
-            pullRequest.additions + pullRequest.deletions,
-        );
+        const numChangedLines = pullRequest.additions + pullRequest.deletions;
+        const sizeLabel = getSizeLabel(numChangedLines);
         add.add(sizeLabel);
 
         for (const label of currentLabels) {
@@ -40,12 +39,12 @@ export function getLabelTransition(
     } else if (
         eventName === "pull_request_review" &&
         action === "submitted" &&
-        reviewState !== undefined
+        reviewState != null
     ) {
         reviewEvent = { kind: "review-submitted", state: reviewState };
     }
 
-    if (reviewEvent !== undefined) {
+    if (reviewEvent != null) {
         const reviewTransition = getReviewLabelTransition(
             reviewEvent,
             currentLabels,
