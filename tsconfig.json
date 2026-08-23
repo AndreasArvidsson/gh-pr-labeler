@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "nodenext",
+        "target": "esnext",
+        "moduleResolution": "nodenext",
+        "types": ["node", "mocha"],
+        "rootDir": ".",
+        "esModuleInterop": true,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitReturns": true
+    },
+    "include": ["src", "test"]
+}

@@ -1,0 +1,17 @@
+name: GitHub PR Labeler
+description: Maintains pull request size and review-state labels
+author: Andreas Arvidsson
+
+inputs:
+  github-token:
+    description: Token used to read pull requests and manage labels
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: node24
+  main: dist/index.js
+
+branding:
+  icon: tag
+  color: blue

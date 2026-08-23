@@ -1,0 +1,17 @@
+name: PR labeler
+
+on:
+    workflow_call:
+
+permissions:
+    pull-requests: read
+    issues: write
+
+jobs:
+    labels:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Update pull request labels
+              uses: AndreasArvidsson/gh-pr-labeler@v1
+              with:
+                  github-token: ${{ github.token }}
