@@ -18,33 +18,60 @@ The action creates its labels automatically when they are first needed.
 
 PR size is `additions + deletions`. Size is recalculated when a PR is opened, reopened, or synchronized, and exactly one `size/` label is retained.
 
-A submitted changes-request review sets `review/changes-requested`. A subsequent push replaces it with `review/updated-after-changes-requested`. A submitted approval clears both review-state labels.
+A submitted changes-request review sets `review/changes-requested`. A subsequent push replaces it with `review/updated-after-changes-requested`. A submitted approval clears both review-state labels. Dismissing the last relevant review also clears both labels.
 
 ## Install in another repository
 
-Add this workflow to the consuming repository, for example as `.github/workflows/pr-labels.yml`:
+Fork pull requests receive a read-only token. To support them safely, use one unprivileged workflow to receive PR events and a second trusted workflow to update labels after the first workflow completes.
+
+Add `.github/workflows/pr-label-events.yml`:
 
 ```yaml
-name: PR labeler
+name: PR label events
 
 on:
     pull_request:
         types: [opened, synchronize, reopened]
     pull_request_review:
-        types: [submitted]
+        types: [submitted, dismissed]
+
+permissions: {}
+
+jobs:
+    signal:
+        runs-on: ubuntu-latest
+        steps:
+            - run: echo "PR label event received"
+```
+
+Then add `.github/workflows/pr-labels.yml`:
+
+```yaml
+name: PR labels
+
+on:
+    workflow_run:
+        workflows: [PR label events]
+        types: [completed]
 
 permissions:
     pull-requests: write
 
 jobs:
     labels:
+        if: >-
+            github.event.workflow_run.conclusion == 'success' &&
+            (github.event.workflow_run.event == 'pull_request' ||
+            github.event.workflow_run.event == 'pull_request_review')
         runs-on: ubuntu-latest
         steps:
             - name: Update PR labels
-              uses: AndreasArvidsson/gh-pr-labeler@v1
+              uses: AndreasArvidsson/gh-pr-labeler@v1.0.0
 ```
 
-The action uses the workflow's `GITHUB_TOKEN`.
+Both workflows must exist on the default branch. The first workflow has no repository permissions and does not check out or execute PR code. The second workflow runs from the trusted default branch, fetches current PR and review data through GitHub's API, and uses its write-capable `GITHUB_TOKEN` to update labels.
+
+Repositories that do not accept fork or Dependabot pull requests can invoke `AndreasArvidsson/gh-pr-labeler@v1` directly from their existing PR workflow instead.
 
 ## Development
 

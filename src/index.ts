@@ -3,6 +3,8 @@ import * as github from "@actions/github";
 import { createMissingLabels } from "./createMissingLabels.js";
 import { getErrorStatus } from "./getErrorStatus.js";
 import { getLabelTransition } from "./getLabelTransition.js";
+import { getLatestRelevantReview } from "./getLatestRelevantReview.js";
+import { resolvePullNumber } from "./resolvePullNumber.js";
 import type { ActionPayload } from "./types.js";
 
 async function run(): Promise<void> {
@@ -11,39 +13,41 @@ async function run(): Promise<void> {
     const { owner, repo } = github.context.repo;
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const payload = github.context.payload as ActionPayload;
-    const pullRequest = payload.pull_request;
+    const pullNumber = await resolvePullNumber(
+        octokit,
+        owner,
+        repo,
+        github.context.eventName,
+        payload,
+    );
 
-    if (pullRequest == null) {
-        core.info(
-            `Ignoring ${github.context.eventName}: event has no pull request`,
-        );
+    if (pullNumber == null) {
+        core.info(`Ignoring unsupported ${github.context.eventName} event`);
         return;
     }
 
-    // GH represents PR as a special type of issue internally
-    const issueNumber = pullRequest.number;
-
     await createMissingLabels(octokit, owner, repo);
 
-    const labelsResponse = await octokit.paginate(
-        octokit.rest.issues.listLabelsOnIssue,
-        {
+    const [{ data: pullRequest }, relevantReview, labels] = await Promise.all([
+        octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber }),
+        getLatestRelevantReview(octokit, owner, repo, pullNumber),
+        // GH represents PRs as a special type of issue internally
+        octokit.paginate(octokit.rest.issues.listLabelsOnIssue, {
             owner,
             repo,
-            issue_number: issueNumber,
+            issue_number: pullNumber,
             per_page: 100,
-        },
-    );
-    const currentLabels = new Set(
-        labelsResponse
-            .map((label) => label.name)
-            .filter((name): name is string => typeof name === "string"),
-    );
+        }),
+    ]);
+    const currentLabels = new Set(labels.map((label) => label.name));
     const transition = getLabelTransition(
-        github.context.eventName,
-        payload.action,
-        payload.review?.state,
-        pullRequest,
+        {
+            number: pullRequest.number,
+            additions: pullRequest.additions,
+            deletions: pullRequest.deletions,
+        },
+        pullRequest.head.sha,
+        relevantReview,
         currentLabels,
     );
 
@@ -56,10 +60,11 @@ async function run(): Promise<void> {
             await octokit.rest.issues.removeLabel({
                 owner,
                 repo,
-                issue_number: issueNumber,
+                // GH represents PR as a special type of issue internally
+                issue_number: pullNumber,
                 name: label,
             });
-            core.info(`Removed label ${label}`);
+            core.info(`Removed label: ${label}`);
         } catch (error: unknown) {
             if (getErrorStatus(error) !== 404) {
                 throw error;
@@ -74,10 +79,12 @@ async function run(): Promise<void> {
         await octokit.rest.issues.addLabels({
             owner,
             repo,
-            issue_number: issueNumber,
+            issue_number: pullNumber,
             labels: labelsToAdd,
         });
-        core.info(`Added ${labelsToAdd.join(", ")}`);
+        for (const label of labelsToAdd) {
+            core.info(`Added label: ${label}`);
+        }
     }
 }
 

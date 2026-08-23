@@ -1,4 +1,4 @@
-import type { LabelDefinition, LabelTransition, ReviewEvent } from "./types";
+import type { LabelDefinition } from "./types.js";
 
 export const CHANGES_REQUESTED_LABEL = "review/changes-requested";
 export const UPDATED_AFTER_CHANGES_REQUESTED_LABEL =
@@ -16,40 +16,3 @@ export const REVIEW_LABELS: readonly LabelDefinition[] = [
         description: "New commits were pushed after changes were requested",
     },
 ] as const;
-
-export function getReviewLabelTransition(
-    event: ReviewEvent,
-    currentLabels: ReadonlySet<string>,
-): LabelTransition {
-    if (event.kind === "pull-request-synchronized") {
-        if (currentLabels.has(CHANGES_REQUESTED_LABEL)) {
-            return {
-                add: [UPDATED_AFTER_CHANGES_REQUESTED_LABEL],
-                remove: [CHANGES_REQUESTED_LABEL],
-            };
-        }
-
-        return { add: [], remove: [] };
-    }
-
-    const state = event.state.toUpperCase();
-
-    if (state === "CHANGES_REQUESTED") {
-        return {
-            add: [CHANGES_REQUESTED_LABEL],
-            remove: [UPDATED_AFTER_CHANGES_REQUESTED_LABEL],
-        };
-    }
-
-    if (state === "APPROVED") {
-        return {
-            add: [],
-            remove: [
-                CHANGES_REQUESTED_LABEL,
-                UPDATED_AFTER_CHANGES_REQUESTED_LABEL,
-            ],
-        };
-    }
-
-    return { add: [], remove: [] };
-}

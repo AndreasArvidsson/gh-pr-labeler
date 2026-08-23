@@ -37,7 +37,7 @@ export async function createMissingLabels(
                 color: label.color,
                 description: label.description,
             });
-            core.info(`Created label ${label.name}`);
+            core.info(`Created label: ${label.name}`);
         } catch (createError: unknown) {
             if (getErrorStatus(createError) !== 422) {
                 throw createError;
