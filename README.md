@@ -25,7 +25,7 @@ A submitted changes-request review sets `review/changes-requested`. A subsequent
 Add this workflow to the consuming repository, for example as `.github/workflows/pr-labels.yml`:
 
 ```yaml
-name: PR labels
+name: PR labeler
 
 on:
     pull_request:
@@ -34,8 +34,7 @@ on:
         types: [submitted]
 
 permissions:
-    pull-requests: read
-    issues: write
+    pull-requests: write
 
 jobs:
     labels:
@@ -45,7 +44,7 @@ jobs:
               uses: AndreasArvidsson/gh-pr-labeler@v1
 ```
 
-The action uses the workflow's `GITHUB_TOKEN`. It only needs `pull-requests: read` to inspect the PR and `issues: write` because GitHub manages PR labels through the Issues API.
+The action uses the workflow's `GITHUB_TOKEN`.
 
 ## Development
 
