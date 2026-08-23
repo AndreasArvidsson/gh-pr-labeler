@@ -1,36 +1,9 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import type { LabelTransition, ReviewEvent } from "./review-labels.js";
-import { REVIEW_LABELS, getReviewLabelTransition } from "./review-labels.js";
-import { SIZE_LABEL_PREFIX, SIZE_LABELS, getSizeLabel } from "./size-labels.js";
-
-interface LabelDefinition {
-    readonly name: string;
-    readonly color: string;
-    readonly description: string;
-}
-
-interface PullRequestPayload {
-    readonly number: number;
-    readonly additions: number;
-    readonly deletions: number;
-}
-
-interface ActionPayload {
-    readonly action?: string;
-    readonly pull_request?: PullRequestPayload;
-    readonly review?: {
-        readonly state?: string;
-    };
-}
-
-function getStatus(error: unknown): number | undefined {
-    if (typeof error !== "object" || error == null || !("status" in error)) {
-        return undefined;
-    }
-
-    return typeof error.status === "number" ? error.status : undefined;
-}
+import { createMissingLabels } from "./createMissingLabels.js";
+import { getErrorStatus } from "./getErrorStatus.js";
+import { getLabelTransition } from "./getLabelTransition.js";
+import type { ActionPayload } from "./types.js";
 
 async function run(): Promise<void> {
     const token = core.getInput("github-token", { required: true });
@@ -49,46 +22,8 @@ async function run(): Promise<void> {
 
     // GH represents PR as a special type of issue internally
     const issueNumber = pullRequest.number;
-    const definitions: readonly LabelDefinition[] = [
-        ...SIZE_LABELS,
-        ...REVIEW_LABELS,
-    ];
 
-    for (const definition of definitions) {
-        try {
-            await octokit.rest.issues.getLabel({
-                owner,
-                repo,
-                name: definition.name,
-            });
-        } catch (error: unknown) {
-            if (getStatus(error) !== 404) {
-                throw error;
-            }
-
-            try {
-                await octokit.rest.issues.createLabel({
-                    owner,
-                    repo,
-                    name: definition.name,
-                    color: definition.color,
-                    description: definition.description,
-                });
-                core.info(`Created label ${definition.name}`);
-            } catch (createError: unknown) {
-                if (getStatus(createError) !== 422) {
-                    throw createError;
-                }
-
-                // Another concurrent run may have created the label after our lookup.
-                await octokit.rest.issues.getLabel({
-                    owner,
-                    repo,
-                    name: definition.name,
-                });
-            }
-        }
-    }
+    await createMissingLabels(octokit, owner, repo);
 
     const labelsResponse = await octokit.paginate(
         octokit.rest.issues.listLabelsOnIssue,
@@ -104,7 +39,7 @@ async function run(): Promise<void> {
             .map((label) => label.name)
             .filter((name): name is string => typeof name === "string"),
     );
-    const transition = getTransition(
+    const transition = getLabelTransition(
         github.context.eventName,
         payload.action,
         payload.review?.state,
@@ -126,7 +61,7 @@ async function run(): Promise<void> {
             });
             core.info(`Removed label ${label}`);
         } catch (error: unknown) {
-            if (getStatus(error) !== 404) {
+            if (getErrorStatus(error) !== 404) {
                 throw error;
             }
         }
@@ -144,65 +79,6 @@ async function run(): Promise<void> {
         });
         core.info(`Added ${labelsToAdd.join(", ")}`);
     }
-}
-
-function getTransition(
-    eventName: string,
-    action: string | undefined,
-    reviewState: string | undefined,
-    pullRequest: PullRequestPayload,
-    currentLabels: ReadonlySet<string>,
-): LabelTransition {
-    const add = new Set<string>();
-    const remove = new Set<string>();
-
-    if (
-        eventName === "pull_request" &&
-        (action === "opened" ||
-            action === "reopened" ||
-            action === "synchronize")
-    ) {
-        const sizeLabel = getSizeLabel(
-            pullRequest.additions + pullRequest.deletions,
-        );
-        add.add(sizeLabel);
-
-        for (const label of currentLabels) {
-            if (label.startsWith(SIZE_LABEL_PREFIX) && label !== sizeLabel) {
-                remove.add(label);
-            }
-        }
-    }
-
-    let reviewEvent: ReviewEvent | undefined;
-    if (eventName === "pull_request" && action === "synchronize") {
-        reviewEvent = { kind: "pull-request-synchronized" };
-    } else if (
-        eventName === "pull_request_review" &&
-        action === "submitted" &&
-        reviewState !== undefined
-    ) {
-        reviewEvent = { kind: "review-submitted", state: reviewState };
-    }
-
-    if (reviewEvent !== undefined) {
-        const reviewTransition = getReviewLabelTransition(
-            reviewEvent,
-            currentLabels,
-        );
-        for (const label of reviewTransition.add) {
-            add.add(label);
-        }
-        for (const label of reviewTransition.remove) {
-            remove.add(label);
-        }
-    }
-
-    for (const label of remove) {
-        add.delete(label);
-    }
-
-    return { add: [...add], remove: [...remove] };
 }
 
 // oxlint-disable-next-line promise/prefer-await-to-then

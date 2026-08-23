@@ -51,7 +51,6 @@ Requires Node.js 24 or newer.
 
 ```shell
 npm install
-npm run typecheck
 npm run lint
 npm run test
 npm run build

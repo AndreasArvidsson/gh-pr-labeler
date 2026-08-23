@@ -1,8 +1,10 @@
+import type { LabelDefinition, LabelTransition, ReviewEvent } from "./types";
+
 export const CHANGES_REQUESTED_LABEL = "review/changes-requested";
 export const UPDATED_AFTER_CHANGES_REQUESTED_LABEL =
     "review/updated-after-changes-requested";
 
-export const REVIEW_LABELS = [
+export const REVIEW_LABELS: readonly LabelDefinition[] = [
     {
         name: CHANGES_REQUESTED_LABEL,
         color: "d73a4a",
@@ -14,15 +16,6 @@ export const REVIEW_LABELS = [
         description: "New commits were pushed after changes were requested",
     },
 ] as const;
-
-export type ReviewEvent =
-    | { kind: "review-submitted"; state: string }
-    | { kind: "pull-request-synchronized" };
-
-export interface LabelTransition {
-    add: readonly string[];
-    remove: readonly string[];
-}
 
 export function getReviewLabelTransition(
     event: ReviewEvent,

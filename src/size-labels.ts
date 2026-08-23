@@ -1,11 +1,6 @@
-export const SIZE_LABEL_PREFIX = "size/";
+import type { SizeLabel } from "./types";
 
-interface SizeLabel {
-    readonly name: `size/${string}`;
-    readonly maxValue: number;
-    readonly color: string;
-    readonly description: string;
-}
+export const SIZE_LABEL_PREFIX = "size/";
 
 export const SIZE_LABELS: readonly SizeLabel[] = [
     {
