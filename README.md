@@ -6,16 +6,16 @@ A GitHub Action that keeps pull request size and review-state labels up to date.
 
 The action creates its labels automatically when they are first needed.
 
-| Label                                    | Color                                                     | Meaning                                              |
-| ---------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------- |
-| `size/<10`                               | ![#b7eb8f](https://img.shields.io/badge/%23b7eb8f-b7eb8f) | Fewer than 10 changed lines                          |
-| `size/10-49`                             | ![#c5def5](https://img.shields.io/badge/%23c5def5-c5def5) | 10–49 changed lines                                  |
-| `size/50-199`                            | ![#bfdadc](https://img.shields.io/badge/%23bfdadc-bfdadc) | 50–199 changed lines                                 |
-| `size/200-499`                           | ![#fbca04](https://img.shields.io/badge/%23fbca04-fbca04) | 200–499 changed lines                                |
-| `size/500-999`                           | ![#f9a825](https://img.shields.io/badge/%23f9a825-f9a825) | 500–999 changed lines                                |
-| `size/1000+`                             | ![#d93f0b](https://img.shields.io/badge/%23d93f0b-d93f0b) | At least 1,000 changed lines                         |
-| `review/changes-requested`               | ![#d73a4a](https://img.shields.io/badge/%23d73a4a-d73a4a) | A reviewer requested changes                         |
-| `review/updated-after-changes-requested` | ![#0e8a16](https://img.shields.io/badge/%230e8a16-0e8a16) | New commits were pushed after changes were requested |
+| Label                                                                                                                      | Meaning                                              |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| ![size/<10](https://img.shields.io/badge/size%2F%3C10-b7eb8f)                                                              | Fewer than 10 changed lines                          |
+| ![size/10-49](https://img.shields.io/badge/size%2F10--49-c5def5)                                                           | 10–49 changed lines                                  |
+| ![size/50-199](https://img.shields.io/badge/size%2F50--199-bfdadc)                                                         | 50–199 changed lines                                 |
+| ![size/200-499](https://img.shields.io/badge/size%2F200--499-fbca04)                                                       | 200–499 changed lines                                |
+| ![size/500-999](https://img.shields.io/badge/size%2F500--999-f9a825)                                                       | 500–999 changed lines                                |
+| ![size/1000+](https://img.shields.io/badge/size%2F1000%2B-d93f0b)                                                          | At least 1,000 changed lines                         |
+| ![review/changes-requested](https://img.shields.io/badge/review%2Fchanges--requested-d73a4a)                               | A reviewer requested changes                         |
+| ![review/updated-after-changes-requested](https://img.shields.io/badge/review%2Fupdated--after--changes--requested-0e8a16) | New commits were pushed after changes were requested |
 
 PR size is `additions + deletions`. Size is recalculated when a PR is opened, reopened, or synchronized, and exactly one `size/` label is retained.
 
