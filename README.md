@@ -64,12 +64,12 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Update PR labels
-              uses: AndreasArvidsson/gh-pr-labeler@v1.0.0
+              uses: AndreasArvidsson/gh-pr-labeler@v1.1.0
 ```
 
 Both workflows must exist on the default branch. The first workflow has no repository permissions and does not check out or execute PR code. The second workflow runs from the trusted default branch, fetches current PR and review data through GitHub's API, and uses its write-capable `GITHUB_TOKEN` to update labels.
 
-Repositories that do not accept fork or Dependabot pull requests can invoke `AndreasArvidsson/gh-pr-labeler@v1.0.0` directly from their existing PR workflow instead.
+Repositories that do not accept fork or Dependabot pull requests can invoke `AndreasArvidsson/gh-pr-labeler@v1.1.0` directly from their existing PR workflow instead.
 
 ## Development
 
