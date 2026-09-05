@@ -1,6 +1,6 @@
 # GitHub PR Labeler
 
-A GitHub Action that keeps pull request size and review-state labels up to date. Everything runs on GitHub Actions; consuming repositories do not need a server, configuration file, or dependency installation.
+A GitHub Action that keeps pull request lines and review-state labels up to date. Everything runs on GitHub Actions; consuming repositories do not need a server, configuration file, or dependency installation.
 
 ## Labels
 
@@ -8,16 +8,16 @@ The action creates its labels automatically when they are first needed.
 
 | Label                                                                                                                      | Meaning                                              |
 | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| ![size/<10](https://img.shields.io/badge/size%2F%3C10-b7eb8f)                                                              | Fewer than 10 changed lines                          |
-| ![size/10-49](https://img.shields.io/badge/size%2F10--49-73d13d)                                                           | 10–49 changed lines                                  |
-| ![size/50-199](https://img.shields.io/badge/size%2F50--199-d3d74b)                                                         | 50–199 changed lines                                 |
-| ![size/200-499](https://img.shields.io/badge/size%2F200--499-fbca04)                                                       | 200–499 changed lines                                |
-| ![size/500-999](https://img.shields.io/badge/size%2F500--999-f9a825)                                                       | 500–999 changed lines                                |
-| ![size/1000+](https://img.shields.io/badge/size%2F1000%2B-d93f0b)                                                          | At least 1,000 changed lines                         |
+| ![lines/<10](https://img.shields.io/badge/lines%2F%3C10-b7eb8f)                                                            | Fewer than 10 changed lines                          |
+| ![lines/10-49](https://img.shields.io/badge/lines%2F10--49-73d13d)                                                         | 10–49 changed lines                                  |
+| ![lines/50-199](https://img.shields.io/badge/lines%2F50--199-d3d74b)                                                       | 50–199 changed lines                                 |
+| ![lines/200-499](https://img.shields.io/badge/lines%2F200--499-fbca04)                                                     | 200–499 changed lines                                |
+| ![lines/500-999](https://img.shields.io/badge/lines%2F500--999-f9a825)                                                     | 500–999 changed lines                                |
+| ![lines/1000+](https://img.shields.io/badge/lines%2F1000%2B-d93f0b)                                                        | At least 1,000 changed lines                         |
 | ![review/changes-requested](https://img.shields.io/badge/review%2Fchanges--requested-d73a4a)                               | A reviewer requested changes                         |
 | ![review/updated-after-changes-requested](https://img.shields.io/badge/review%2Fupdated--after--changes--requested-0e8a16) | New commits were pushed after changes were requested |
 
-PR size is `additions + deletions`. Size is recalculated when a PR is opened, reopened, or synchronized, and exactly one `size/` label is retained.
+PR size is `additions + deletions`. Lines is recalculated when a PR is opened, reopened, or synchronized, and exactly one `lines/` label is retained.
 
 Only submitted approvals and change requests from reviewers with write access or higher (write, maintain, or admin) affect review-state labels. Permissions are checked when the action runs. Reviews from other users are ignored. The latest qualifying review wins across reviewers; these labels do not represent GitHub's full merge requirements or enforce code ownership.
 
@@ -66,12 +66,12 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Update PR labels
-              uses: AndreasArvidsson/gh-pr-labeler@v1.3.0
+              uses: AndreasArvidsson/gh-pr-labeler@v1.4.0
 ```
 
 Both workflows must exist on the default branch. The first workflow has no repository permissions and does not check out or execute PR code. The second workflow runs from the trusted default branch, fetches current PR and review data through GitHub's API, and uses its write-capable `GITHUB_TOKEN` to update labels.
 
-Repositories that do not accept fork or Dependabot pull requests can invoke `AndreasArvidsson/gh-pr-labeler@v1.3.0` directly from their existing PR workflow instead.
+Repositories that do not accept fork or Dependabot pull requests can invoke `AndreasArvidsson/gh-pr-labeler@v1.4.0` directly from their existing PR workflow instead.
 
 ## Development
 

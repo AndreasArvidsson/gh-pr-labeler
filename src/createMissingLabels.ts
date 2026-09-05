@@ -1,8 +1,8 @@
 import * as core from "@actions/core";
 import type { GitHub } from "@actions/github/lib/utils";
 import { getErrorStatus } from "./getErrorStatus";
-import { REVIEW_LABELS } from "./review-labels";
-import { SIZE_LABELS } from "./size-labels";
+import { LINES_LABELS } from "./linesLabels";
+import { REVIEW_LABELS } from "./reviewLabels";
 import type { LabelDefinition } from "./types";
 
 export async function createMissingLabels(
@@ -11,7 +11,7 @@ export async function createMissingLabels(
     repo: string,
 ): Promise<void> {
     const labels: readonly LabelDefinition[] = [
-        ...SIZE_LABELS,
+        ...LINES_LABELS,
         ...REVIEW_LABELS,
     ];
 

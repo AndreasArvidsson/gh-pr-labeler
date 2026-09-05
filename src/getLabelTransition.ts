@@ -1,9 +1,9 @@
 import { REVIEW_APPROVED, REVIEW_CHANGES_REQUESTED } from "./constants.js";
+import { LINES_LABEL_PREFIX, getLinesLabel } from "./linesLabels.js";
 import {
     CHANGES_REQUESTED_LABEL,
     UPDATED_AFTER_CHANGES_REQUESTED_LABEL,
-} from "./review-labels.js";
-import { SIZE_LABEL_PREFIX, getSizeLabel } from "./size-labels.js";
+} from "./reviewLabels.js";
 import type {
     LabelTransition,
     PullRequestPayload,
@@ -19,11 +19,11 @@ export function getLabelTransition(
     const add = new Set<string>();
     const remove = new Set<string>();
     const numChangedLines = pullRequest.additions + pullRequest.deletions;
-    const sizeLabel = getSizeLabel(numChangedLines);
-    add.add(sizeLabel);
+    const linesLabel = getLinesLabel(numChangedLines);
+    add.add(linesLabel);
 
     for (const label of currentLabels) {
-        if (label.startsWith(SIZE_LABEL_PREFIX) && label !== sizeLabel) {
+        if (label.startsWith(LINES_LABEL_PREFIX) && label !== linesLabel) {
             remove.add(label);
         }
     }

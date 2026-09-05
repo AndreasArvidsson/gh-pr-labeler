@@ -1,5 +1,5 @@
 name: GitHub PR Labeler
-description: Maintains pull request size and review-state labels
+description: Maintains pull request lines and review-state labels
 author: Andreas Arvidsson
 
 inputs:

@@ -39,8 +39,8 @@ export interface LabelDefinition {
     readonly description: string;
 }
 
-export interface SizeLabel {
-    readonly name: `size/${string}`;
+export interface LinesLabel {
+    readonly name: `lines/${string}`;
     readonly maxValue: number;
     readonly color: string;
     readonly description: string;
