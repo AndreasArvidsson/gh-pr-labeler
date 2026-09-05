@@ -12,6 +12,8 @@ export interface WorkflowRunPayload {
     readonly conclusion?: string | null;
     readonly event?: string;
     readonly head_sha?: string;
+    readonly head_branch?: string | null;
+    readonly head_repository?: { readonly id: number } | null;
     // GitHub commonly omits workflow_run.pull_requests when the original PR comes from a fork.
     readonly pull_requests?: readonly {
         readonly number: number;
