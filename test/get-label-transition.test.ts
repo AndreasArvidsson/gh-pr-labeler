@@ -86,7 +86,7 @@ suite("getLabelTransition", () => {
 
         assert.deepEqual(
             new Set(transition.add),
-            new Set(["size/<50", CHANGES_REQUESTED_LABEL]),
+            new Set(["size/10-49", CHANGES_REQUESTED_LABEL]),
         );
         assert.deepEqual(transition.remove, [
             UPDATED_AFTER_CHANGES_REQUESTED_LABEL,
@@ -105,7 +105,7 @@ suite("getLabelTransition", () => {
         );
 
         assert.deepEqual(transition, {
-            add: ["size/<50"],
+            add: ["size/10-49"],
             remove: [
                 CHANGES_REQUESTED_LABEL,
                 UPDATED_AFTER_CHANGES_REQUESTED_LABEL,

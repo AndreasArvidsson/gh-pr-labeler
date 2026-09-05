@@ -3,8 +3,10 @@ import { getSizeLabel } from "../src/size-labels.js";
 
 suite("getSizeLabel", () => {
     const cases: readonly (readonly [number, string])[] = [
-        [0, "size/<50"],
-        [49, "size/<50"],
+        [0, "size/<10"],
+        [9, "size/<10"],
+        [10, "size/10-49"],
+        [49, "size/10-49"],
         [50, "size/50-199"],
         [199, "size/50-199"],
         [200, "size/200-499"],

@@ -4,10 +4,16 @@ export const SIZE_LABEL_PREFIX = "size/";
 
 export const SIZE_LABELS: readonly SizeLabel[] = [
     {
-        name: "size/<50",
+        name: "size/<10",
+        maxValue: 9,
+        color: "b7eb8f",
+        description: "Pull request changes fewer than 10 lines",
+    },
+    {
+        name: "size/10-49",
         maxValue: 49,
         color: "c5def5",
-        description: "Pull request changes fewer than 50 lines",
+        description: "Pull request changes 10 to 49 lines",
     },
     {
         name: "size/50-199",
