@@ -9,8 +9,8 @@ The action creates its labels automatically when they are first needed.
 | Label                                                                                                                      | Meaning                                              |
 | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | ![size/<10](https://img.shields.io/badge/size%2F%3C10-b7eb8f)                                                              | Fewer than 10 changed lines                          |
-| ![size/10-49](https://img.shields.io/badge/size%2F10--49-c5def5)                                                           | 10–49 changed lines                                  |
-| ![size/50-199](https://img.shields.io/badge/size%2F50--199-bfdadc)                                                         | 50–199 changed lines                                 |
+| ![size/10-49](https://img.shields.io/badge/size%2F10--49-73d13d)                                                           | 10–49 changed lines                                  |
+| ![size/50-199](https://img.shields.io/badge/size%2F50--199-d3d74b)                                                         | 50–199 changed lines                                 |
 | ![size/200-499](https://img.shields.io/badge/size%2F200--499-fbca04)                                                       | 200–499 changed lines                                |
 | ![size/500-999](https://img.shields.io/badge/size%2F500--999-f9a825)                                                       | 500–999 changed lines                                |
 | ![size/1000+](https://img.shields.io/badge/size%2F1000%2B-d93f0b)                                                          | At least 1,000 changed lines                         |
@@ -66,12 +66,12 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Update PR labels
-              uses: AndreasArvidsson/gh-pr-labeler@v1.2.0
+              uses: AndreasArvidsson/gh-pr-labeler@v1.3.0
 ```
 
 Both workflows must exist on the default branch. The first workflow has no repository permissions and does not check out or execute PR code. The second workflow runs from the trusted default branch, fetches current PR and review data through GitHub's API, and uses its write-capable `GITHUB_TOKEN` to update labels.
 
-Repositories that do not accept fork or Dependabot pull requests can invoke `AndreasArvidsson/gh-pr-labeler@v1.2.0` directly from their existing PR workflow instead.
+Repositories that do not accept fork or Dependabot pull requests can invoke `AndreasArvidsson/gh-pr-labeler@v1.3.0` directly from their existing PR workflow instead.
 
 ## Development
 

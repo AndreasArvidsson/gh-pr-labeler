@@ -12,13 +12,13 @@ export const SIZE_LABELS: readonly SizeLabel[] = [
     {
         name: "size/10-49",
         maxValue: 49,
-        color: "c5def5",
+        color: "73d13d",
         description: "Pull request changes 10 to 49 lines",
     },
     {
         name: "size/50-199",
         maxValue: 199,
-        color: "bfdadc",
+        color: "d3d74b",
         description: "Pull request changes 50 to 199 lines",
     },
     {
