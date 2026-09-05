@@ -19,6 +19,8 @@ The action creates its labels automatically when they are first needed.
 
 PR size is `additions + deletions`. Size is recalculated when a PR is opened, reopened, or synchronized, and exactly one `size/` label is retained.
 
+Only submitted approvals and change requests from reviewers with write access or higher (write, maintain, or admin) affect review-state labels. Permissions are checked when the action runs. Reviews from other users are ignored. The latest qualifying review wins across reviewers; these labels do not represent GitHub's full merge requirements or enforce code ownership.
+
 A submitted changes-request review sets `review/changes-requested`. A subsequent push replaces it with `review/updated-after-changes-requested`. A submitted approval clears both review-state labels. Dismissing the last relevant review also clears both labels.
 
 ## Install in another repository
@@ -64,12 +66,12 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Update PR labels
-              uses: AndreasArvidsson/gh-pr-labeler@v1.1.0
+              uses: AndreasArvidsson/gh-pr-labeler@v1.2.0
 ```
 
 Both workflows must exist on the default branch. The first workflow has no repository permissions and does not check out or execute PR code. The second workflow runs from the trusted default branch, fetches current PR and review data through GitHub's API, and uses its write-capable `GITHUB_TOKEN` to update labels.
 
-Repositories that do not accept fork or Dependabot pull requests can invoke `AndreasArvidsson/gh-pr-labeler@v1.1.0` directly from their existing PR workflow instead.
+Repositories that do not accept fork or Dependabot pull requests can invoke `AndreasArvidsson/gh-pr-labeler@v1.2.0` directly from their existing PR workflow instead.
 
 ## Development
 
