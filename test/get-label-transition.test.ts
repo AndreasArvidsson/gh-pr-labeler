@@ -6,12 +6,25 @@ import {
 } from "../src/reviewLabels.js";
 
 suite("getLabelTransition", () => {
+    test("keeps changes requested when only other authors added commits", () => {
+        const transition = getLabelTransition(
+            { number: 42, additions: 1, deletions: 0 },
+            { state: "CHANGES_REQUESTED", commit_id: "old-head" },
+            new Set([UPDATED_AFTER_CHANGES_REQUESTED_LABEL]),
+            false,
+        );
+        assert.ok(transition.add.includes(CHANGES_REQUESTED_LABEL));
+        assert.ok(
+            transition.remove.includes(UPDATED_AFTER_CHANGES_REQUESTED_LABEL),
+        );
+    });
+
     test("replaces the existing lines label without touching unrelated labels", () => {
         const transition = getLabelTransition(
             { number: 42, additions: 125, deletions: 75 },
-            "head",
             undefined,
             new Set(["lines/<50", "bug"]),
+            false,
         );
 
         assert.deepEqual(transition, {
@@ -27,13 +40,13 @@ suite("getLabelTransition", () => {
     test("recalculates lines and marks updates after requested changes", () => {
         const transition = getLabelTransition(
             { number: 42, additions: 40, deletions: 20 },
-            "new-head",
             {
                 state: "CHANGES_REQUESTED",
                 commit_id: "old-head",
                 submitted_at: "2026-01-01T00:00:00Z",
             },
             new Set(["lines/<50", CHANGES_REQUESTED_LABEL, "bug"]),
+            true,
         );
 
         assert.deepEqual(
@@ -49,7 +62,6 @@ suite("getLabelTransition", () => {
     test("recalculates lines and clears review labels after approval", () => {
         const transition = getLabelTransition(
             { number: 42, additions: 600, deletions: 400 },
-            "head",
             {
                 state: "APPROVED",
                 commit_id: "head",
@@ -60,6 +72,7 @@ suite("getLabelTransition", () => {
                 CHANGES_REQUESTED_LABEL,
                 UPDATED_AFTER_CHANGES_REQUESTED_LABEL,
             ]),
+            false,
         );
 
         assert.deepEqual(transition, {
@@ -75,13 +88,13 @@ suite("getLabelTransition", () => {
     test("recalculates lines and sets changes requested for a review on the current commit", () => {
         const transition = getLabelTransition(
             { number: 42, additions: 20, deletions: 10 },
-            "head",
             {
                 state: "CHANGES_REQUESTED",
                 commit_id: "head",
                 submitted_at: "2026-01-01T00:00:00Z",
             },
             new Set([UPDATED_AFTER_CHANGES_REQUESTED_LABEL]),
+            false,
         );
 
         assert.deepEqual(
@@ -96,12 +109,12 @@ suite("getLabelTransition", () => {
     test("clears review labels when no relevant review remains", () => {
         const transition = getLabelTransition(
             { number: 42, additions: 20, deletions: 10 },
-            "head",
             undefined,
             new Set([
                 CHANGES_REQUESTED_LABEL,
                 UPDATED_AFTER_CHANGES_REQUESTED_LABEL,
             ]),
+            false,
         );
 
         assert.deepEqual(transition, {

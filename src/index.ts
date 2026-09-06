@@ -4,6 +4,7 @@ import { createMissingLabels } from "./createMissingLabels.js";
 import { getErrorStatus } from "./getErrorStatus.js";
 import { getLabelTransition } from "./getLabelTransition.js";
 import { getLatestRelevantReview } from "./getLatestRelevantReview.js";
+import { hasAuthorCommitSinceReview } from "./hasAuthorCommitSinceReview.js";
 import { resolvePullNumber } from "./resolvePullNumber.js";
 import type { ActionPayload } from "./types.js";
 
@@ -40,15 +41,24 @@ async function run(): Promise<void> {
         }),
     ]);
     const currentLabels = new Set(labels.map((label) => label.name));
+    const hasCommitAfterReview = await hasAuthorCommitSinceReview(
+        octokit,
+        owner,
+        repo,
+        pullRequest.user.id,
+        pullRequest.head.sha,
+        pullRequest.base.sha,
+        relevantReview,
+    );
     const transition = getLabelTransition(
         {
             number: pullRequest.number,
             additions: pullRequest.additions,
             deletions: pullRequest.deletions,
         },
-        pullRequest.head.sha,
         relevantReview,
         currentLabels,
+        hasCommitAfterReview,
     );
 
     for (const label of transition.remove) {

@@ -13,6 +13,7 @@ export const REVIEW_LABELS: readonly LabelDefinition[] = [
     {
         name: UPDATED_AFTER_CHANGES_REQUESTED_LABEL,
         color: "0e8a16",
-        description: "New commits were pushed after changes were requested",
+        description:
+            "The PR creator pushed a commit after changes were requested",
     },
 ] as const;

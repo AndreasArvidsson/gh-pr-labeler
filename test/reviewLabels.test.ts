@@ -117,9 +117,9 @@ suite("getLatestRelevantReview", () => {
                 assert.equal(selected, expected);
                 const transition = getLabelTransition(
                     { number: 42, additions: 1, deletions: 0 },
-                    "head",
                     selected,
                     new Set(),
+                    false,
                 );
                 assert.equal(
                     transition.add.includes("review/changes-requested"),

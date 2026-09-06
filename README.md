@@ -6,22 +6,22 @@ A GitHub Action that keeps pull request lines and review-state labels up to date
 
 The action creates its labels automatically when they are first needed.
 
-| Label                                                                                                                      | Meaning                                              |
-| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| ![lines/<10](https://img.shields.io/badge/lines%2F%3C10-b7eb8f)                                                            | Fewer than 10 changed lines                          |
-| ![lines/10-49](https://img.shields.io/badge/lines%2F10--49-73d13d)                                                         | 10–49 changed lines                                  |
-| ![lines/50-199](https://img.shields.io/badge/lines%2F50--199-d3d74b)                                                       | 50–199 changed lines                                 |
-| ![lines/200-499](https://img.shields.io/badge/lines%2F200--499-fbca04)                                                     | 200–499 changed lines                                |
-| ![lines/500-999](https://img.shields.io/badge/lines%2F500--999-f9a825)                                                     | 500–999 changed lines                                |
-| ![lines/1000+](https://img.shields.io/badge/lines%2F1000%2B-d93f0b)                                                        | At least 1,000 changed lines                         |
-| ![review/changes-requested](https://img.shields.io/badge/review%2Fchanges--requested-d73a4a)                               | A reviewer requested changes                         |
-| ![review/updated-after-changes-requested](https://img.shields.io/badge/review%2Fupdated--after--changes--requested-0e8a16) | New commits were pushed after changes were requested |
+| Label                                                                                                                      | Meaning                                                     |
+| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| ![lines/<10](https://img.shields.io/badge/lines%2F%3C10-b7eb8f)                                                            | Fewer than 10 changed lines                                 |
+| ![lines/10-49](https://img.shields.io/badge/lines%2F10--49-73d13d)                                                         | 10–49 changed lines                                         |
+| ![lines/50-199](https://img.shields.io/badge/lines%2F50--199-d3d74b)                                                       | 50–199 changed lines                                        |
+| ![lines/200-499](https://img.shields.io/badge/lines%2F200--499-fbca04)                                                     | 200–499 changed lines                                       |
+| ![lines/500-999](https://img.shields.io/badge/lines%2F500--999-f9a825)                                                     | 500–999 changed lines                                       |
+| ![lines/1000+](https://img.shields.io/badge/lines%2F1000%2B-d93f0b)                                                        | At least 1,000 changed lines                                |
+| ![review/changes-requested](https://img.shields.io/badge/review%2Fchanges--requested-d73a4a)                               | A reviewer requested changes                                |
+| ![review/updated-after-changes-requested](https://img.shields.io/badge/review%2Fupdated--after--changes--requested-0e8a16) | The PR creator pushed a commit after changes were requested |
 
 PR size is `additions + deletions`. Lines is recalculated when a PR is opened, reopened, or synchronized, and exactly one `lines/` label is retained.
 
 Only submitted approvals and change requests from reviewers with write access or higher (write, maintain, or admin) affect review-state labels. Permissions are checked when the action runs. Reviews from other users are ignored. The latest qualifying review wins across reviewers; these labels do not represent GitHub's full merge requirements or enforce code ownership.
 
-A submitted changes-request review sets `review/changes-requested`. A subsequent push replaces it with `review/updated-after-changes-requested`. A submitted approval clears both review-state labels. Dismissing the last relevant review also clears both labels.
+A submitted changes-request review sets `review/changes-requested`. A subsequent push containing a commit authored by the PR creator since the reviewed commit replaces it with `review/updated-after-changes-requested`. Commits already on the PR's base branch are excluded, so merging the base branch does not count unrelated work by the PR creator. A submitted approval clears both review-state labels. Dismissing the last relevant review also clears both labels.
 
 ## Install in another repository
 
@@ -58,6 +58,7 @@ on:
         types: [completed]
 
 permissions:
+    contents: read
     pull-requests: write
 
 jobs:
