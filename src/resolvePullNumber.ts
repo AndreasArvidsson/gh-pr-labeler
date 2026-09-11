@@ -47,23 +47,24 @@ export async function resolvePullNumber(
         }
     }
 
-    // Commit associations can also be missing. Match the source repository
-    // and branch against current open PRs, even if the branch has advanced.
-    if (
-        pullRequestNumbers.size === 0 &&
-        workflowRun.head_branch != null &&
-        workflowRun.head_repository != null
-    ) {
+    // Commit associations can also be missing. Review runs can report the base
+    // repository as head_repository for fork PRs, so also match the head SHA.
+    // Repository and branch matching still works when the branch has advanced.
+    if (pullRequestNumbers.size === 0) {
         const openPullRequests = await octokit.paginate(
             octokit.rest.pulls.list,
             { owner, repo, state: "open", per_page: 100 },
         );
         for (const pullRequest of openPullRequests) {
             if (
-                // A deleted fork can have a null repository despite the API type.
-                // oxlint-disable-next-line typescript/no-unnecessary-condition
-                pullRequest.head.repo?.id === workflowRun.head_repository.id &&
-                pullRequest.head.ref === workflowRun.head_branch
+                (workflowRun.head_sha != null &&
+                    pullRequest.head.sha === workflowRun.head_sha) ||
+                (workflowRun.head_repository != null &&
+                    // A deleted fork can have a null repository despite the API type.
+                    // oxlint-disable-next-line typescript/no-unnecessary-condition
+                    pullRequest.head.repo?.id ===
+                        workflowRun.head_repository.id &&
+                    pullRequest.head.ref === workflowRun.head_branch)
             ) {
                 pullRequestNumbers.add(pullRequest.number);
             }

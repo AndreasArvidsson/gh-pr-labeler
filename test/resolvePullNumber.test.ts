@@ -12,6 +12,7 @@ interface OpenPullRequest {
     readonly number: number;
     readonly head: {
         readonly ref: string;
+        readonly sha?: string;
         readonly repo: { readonly id: number } | null;
     };
 }
@@ -147,6 +148,82 @@ suite("resolvePullNumber", () => {
         assert.deepEqual(mock.requestedPullLists, [
             { owner: "owner", repo: "repo", state: "open", per_page: 100 },
         ]);
+    });
+
+    test("finds a fork review PR when the run reports the base repository", async () => {
+        const mock = createOctokitMock(
+            [],
+            [
+                {
+                    number: 2316,
+                    head: {
+                        ref: "push-tpqxnvkyksnv",
+                        sha: "review-head",
+                        repo: { id: 2 },
+                    },
+                },
+                {
+                    number: 2317,
+                    head: {
+                        ref: "push-tpqxnvkyksnv",
+                        sha: "other-head",
+                        repo: { id: 3 },
+                    },
+                },
+            ],
+        );
+
+        const pullNumber = await resolvePullNumber(
+            mock.octokit,
+            "owner",
+            "repo",
+            "workflow_run",
+            {
+                workflow_run: {
+                    conclusion: "success",
+                    event: "pull_request_review",
+                    head_sha: "review-head",
+                    head_branch: "push-tpqxnvkyksnv",
+                    head_repository: { id: 1 },
+                    pull_requests: [],
+                },
+            },
+        );
+
+        assert.equal(pullNumber, 2316);
+        assert.deepEqual(mock.requestedCommitShas, ["review-head"]);
+        assert.equal(mock.requestedPullLists.length, 1);
+    });
+
+    test("rejects multiple open PRs matching the workflow head SHA", async () => {
+        const mock = createOctokitMock(
+            [],
+            [
+                {
+                    number: 41,
+                    head: { ref: "first", sha: "shared-head", repo: { id: 2 } },
+                },
+                {
+                    number: 42,
+                    head: {
+                        ref: "second",
+                        sha: "shared-head",
+                        repo: { id: 3 },
+                    },
+                },
+            ],
+        );
+
+        await assert.rejects(
+            resolvePullNumber(mock.octokit, "owner", "repo", "workflow_run", {
+                workflow_run: {
+                    conclusion: "success",
+                    event: "pull_request_review",
+                    head_sha: "shared-head",
+                },
+            }),
+            /Expected one pull request for workflow run, found 2/u,
+        );
     });
 
     test("rejects ambiguous source branches", async () => {
