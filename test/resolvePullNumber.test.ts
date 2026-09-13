@@ -6,6 +6,7 @@ interface OctokitMock {
     readonly octokit: Octokit;
     readonly requestedCommitShas: readonly string[];
     readonly requestedPullLists: readonly unknown[];
+    readonly requestedReviewLists: readonly unknown[];
 }
 
 interface OpenPullRequest {
@@ -21,6 +22,10 @@ function listPullRequests(): never {
     throw new Error("The endpoint should be passed to paginate");
 }
 
+function listReviews(): never {
+    throw new Error("The endpoint should be passed to paginate");
+}
+
 function listPullRequestsAssociatedWithCommit(): never {
     throw new Error("The endpoint should be passed to paginate");
 }
@@ -28,14 +33,25 @@ function listPullRequestsAssociatedWithCommit(): never {
 function createOctokitMock(
     associatedPullRequests: readonly { readonly number: number }[] = [],
     openPullRequests: readonly OpenPullRequest[] = [],
+    reviews: Readonly<
+        Record<number, readonly { readonly commit_id: string }[]>
+    > = {},
 ): OctokitMock {
     const requestedCommitShas: string[] = [];
     const requestedPullLists: unknown[] = [];
+    const requestedReviewLists: unknown[] = [];
     const octokit = {
         paginate: (
             endpoint: unknown,
-            parameters: { readonly commit_sha: string },
-        ): Promise<readonly { readonly number: number }[]> => {
+            parameters: {
+                readonly commit_sha: string;
+                readonly pull_number: number;
+            },
+        ): Promise<readonly unknown[]> => {
+            if (endpoint === listReviews) {
+                requestedReviewLists.push(parameters);
+                return Promise.resolve(reviews[parameters.pull_number] ?? []);
+            }
             if (endpoint === listPullRequests) {
                 requestedPullLists.push(parameters);
                 return Promise.resolve(openPullRequests);
@@ -46,7 +62,7 @@ function createOctokitMock(
         },
         rest: {
             repos: { listPullRequestsAssociatedWithCommit },
-            pulls: { list: listPullRequests },
+            pulls: { list: listPullRequests, listReviews },
         },
     };
 
@@ -55,6 +71,7 @@ function createOctokitMock(
         octokit: octokit as unknown as Octokit,
         requestedCommitShas,
         requestedPullLists,
+        requestedReviewLists,
     };
 }
 
@@ -194,6 +211,106 @@ suite("resolvePullNumber", () => {
         assert.deepEqual(mock.requestedCommitShas, ["review-head"]);
         assert.equal(mock.requestedPullLists.length, 1);
     });
+
+    test("finds a fork review after its branch advances using the reviewed commit", async () => {
+        const mock = createOctokitMock(
+            [],
+            [
+                {
+                    number: 2316,
+                    head: { ref: "feature", sha: "new-head", repo: { id: 2 } },
+                },
+                {
+                    number: 2317,
+                    head: {
+                        ref: "feature",
+                        sha: "other-head",
+                        repo: { id: 3 },
+                    },
+                },
+                {
+                    number: 2318,
+                    head: { ref: "other", sha: "other-head", repo: { id: 2 } },
+                },
+            ],
+            {
+                2316: [{ commit_id: "old-head" }],
+                2317: [{ commit_id: "unrelated-head" }],
+                2318: [{ commit_id: "old-head" }],
+            },
+        );
+        const pullNumber = await resolvePullNumber(
+            mock.octokit,
+            "owner",
+            "repo",
+            "workflow_run",
+            {
+                workflow_run: {
+                    conclusion: "success",
+                    event: "pull_request_review",
+                    head_sha: "old-head",
+                    head_branch: "feature",
+                    head_repository: { id: 1 },
+                    pull_requests: [],
+                },
+            },
+        );
+
+        assert.equal(pullNumber, 2316);
+        assert.deepEqual(mock.requestedReviewLists, [
+            { owner: "owner", repo: "repo", pull_number: 2316, per_page: 100 },
+            { owner: "owner", repo: "repo", pull_number: 2317, per_page: 100 },
+        ]);
+    });
+
+    for (const matchingReviews of [false, true]) {
+        test(`rejects ${matchingReviews ? "ambiguous" : "missing"} review commit matches`, async () => {
+            const reviews = matchingReviews ? [{ commit_id: "old-head" }] : [];
+            const mock = createOctokitMock(
+                [],
+                [
+                    {
+                        number: 41,
+                        head: {
+                            ref: "feature",
+                            sha: "new-head",
+                            repo: { id: 2 },
+                        },
+                    },
+                    {
+                        number: 42,
+                        head: {
+                            ref: "feature",
+                            sha: "new-head",
+                            repo: { id: 3 },
+                        },
+                    },
+                ],
+                { 41: reviews, 42: reviews },
+            );
+
+            await assert.rejects(
+                resolvePullNumber(
+                    mock.octokit,
+                    "owner",
+                    "repo",
+                    "workflow_run",
+                    {
+                        workflow_run: {
+                            conclusion: "success",
+                            event: "pull_request_review",
+                            head_sha: "old-head",
+                            head_branch: "feature",
+                            head_repository: { id: 1 },
+                        },
+                    },
+                ),
+                {
+                    message: `Expected one pull request for workflow run, found ${matchingReviews ? 2 : 0}`,
+                },
+            );
+        });
+    }
 
     test("rejects multiple open PRs matching the workflow head SHA", async () => {
         const mock = createOctokitMock(
