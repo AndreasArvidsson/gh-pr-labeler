@@ -51,13 +51,28 @@ export async function resolvePullNumber(
     // repository as head_repository for fork PRs, so also match the head SHA.
     // Repository and branch matching still works when the branch has advanced.
     if (pullRequestNumbers.size === 0) {
-        const openPullNumbers = await resolveOpenPullNumbers(
+        const openPullNumbers = await resolveListedPullNumbers(
             octokit,
             owner,
             repo,
             workflowRun,
+            "open",
         );
         for (const pullNumber of openPullNumbers) {
+            pullRequestNumbers.add(pullNumber);
+        }
+    }
+
+    // The PR may have merged while this workflow was waiting to start.
+    if (pullRequestNumbers.size === 0) {
+        const closedPullNumbers = await resolveListedPullNumbers(
+            octokit,
+            owner,
+            repo,
+            workflowRun,
+            "closed",
+        );
+        for (const pullNumber of closedPullNumbers) {
             pullRequestNumbers.add(pullNumber);
         }
     }
@@ -73,23 +88,39 @@ export async function resolvePullNumber(
     return pullNumber;
 }
 
-async function resolveOpenPullNumbers(
+async function resolveListedPullNumbers(
     octokit: Octokit,
     owner: string,
     repo: string,
     workflowRun: WorkflowRunPayload,
+    state: "open" | "closed",
 ): Promise<number[]> {
-    const openPullRequests = await octokit.paginate(octokit.rest.pulls.list, {
-        owner,
-        repo,
-        state: "open",
-        per_page: 100,
-    });
-    const matches = openPullRequests.filter(
+    let pullRequests;
+    if (state === "open") {
+        pullRequests = await octokit.paginate(octokit.rest.pulls.list, {
+            owner,
+            repo,
+            state,
+            per_page: 100,
+        });
+    } else {
+        // Bound this exceptional lookup instead of scanning all historical PRs.
+        const response = await octokit.rest.pulls.list({
+            owner,
+            repo,
+            state,
+            sort: "updated",
+            direction: "desc",
+            per_page: 100,
+        });
+        pullRequests = response.data;
+    }
+    const matches = pullRequests.filter(
         (pullRequest) =>
             (workflowRun.head_sha != null &&
                 pullRequest.head.sha === workflowRun.head_sha) ||
-            (workflowRun.head_repository != null &&
+            (state === "open" &&
+                workflowRun.head_repository != null &&
                 // A deleted fork can have a null repository despite the API type.
                 // oxlint-disable-next-line typescript/no-unnecessary-condition
                 pullRequest.head.repo?.id === workflowRun.head_repository.id &&
@@ -108,7 +139,7 @@ async function resolveOpenPullNumbers(
     // may omit its commit association and report the base repository for the
     // run. Require a review of that commit, not just a matching branch name.
     const pullNumbers: number[] = [];
-    for (const pullRequest of openPullRequests) {
+    for (const pullRequest of pullRequests) {
         if (pullRequest.head.ref !== workflowRun.head_branch) {
             continue;
         }

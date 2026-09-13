@@ -18,10 +18,6 @@ interface OpenPullRequest {
     };
 }
 
-function listPullRequests(): never {
-    throw new Error("The endpoint should be passed to paginate");
-}
-
 function listReviews(): never {
     throw new Error("The endpoint should be passed to paginate");
 }
@@ -36,6 +32,7 @@ function createOctokitMock(
     reviews: Readonly<
         Record<number, readonly { readonly commit_id: string }[]>
     > = {},
+    closedPullRequests: readonly OpenPullRequest[] = [],
 ): OctokitMock {
     const requestedCommitShas: string[] = [];
     const requestedPullLists: unknown[] = [];
@@ -52,7 +49,7 @@ function createOctokitMock(
                 requestedReviewLists.push(parameters);
                 return Promise.resolve(reviews[parameters.pull_number] ?? []);
             }
-            if (endpoint === listPullRequests) {
+            if (endpoint === listClosedPullRequests) {
                 requestedPullLists.push(parameters);
                 return Promise.resolve(openPullRequests);
             }
@@ -62,9 +59,16 @@ function createOctokitMock(
         },
         rest: {
             repos: { listPullRequestsAssociatedWithCommit },
-            pulls: { list: listPullRequests, listReviews },
+            pulls: { list: listClosedPullRequests, listReviews },
         },
     };
+
+    function listClosedPullRequests(
+        parameters: unknown,
+    ): Promise<{ data: readonly OpenPullRequest[] }> {
+        requestedPullLists.push(parameters);
+        return Promise.resolve({ data: closedPullRequests });
+    }
 
     return {
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -76,6 +80,79 @@ function createOctokitMock(
 }
 
 suite("resolvePullNumber", () => {
+    for (const advanced of [false, true]) {
+        test(`finds a merged fork PR ${advanced ? "by its reviewed commit" : "by its head SHA"}`, async () => {
+            const mock = createOctokitMock(
+                [],
+                [],
+                {
+                    2293: [{ commit_id: "review-head" }],
+                },
+                [
+                    {
+                        number: 2293,
+                        head: {
+                            ref: "feature",
+                            sha: advanced ? "new-head" : "review-head",
+                            repo: { id: 2 },
+                        },
+                    },
+                ],
+            );
+            assert.equal(
+                await resolvePullNumber(
+                    mock.octokit,
+                    "owner",
+                    "repo",
+                    "workflow_run",
+                    {
+                        workflow_run: {
+                            conclusion: "success",
+                            event: "pull_request_review",
+                            head_sha: "review-head",
+                            head_branch: "feature",
+                            head_repository: { id: 1 },
+                            pull_requests: [],
+                        },
+                    },
+                ),
+                2293,
+            );
+            assert.deepEqual(mock.requestedPullLists, [
+                { owner: "owner", repo: "repo", state: "open", per_page: 100 },
+                {
+                    owner: "owner",
+                    repo: "repo",
+                    state: "closed",
+                    sort: "updated",
+                    direction: "desc",
+                    per_page: 100,
+                },
+            ]);
+        });
+    }
+
+    test("does not resolve a closed PR from a reused branch without commit evidence", async () => {
+        const mock = createOctokitMock([], [], {}, [
+            {
+                number: 42,
+                head: { ref: "feature", sha: "old-head", repo: { id: 1 } },
+            },
+        ]);
+        await assert.rejects(
+            resolvePullNumber(mock.octokit, "owner", "repo", "workflow_run", {
+                workflow_run: {
+                    conclusion: "success",
+                    event: "pull_request_review",
+                    head_sha: "new-head",
+                    head_branch: "feature",
+                    head_repository: { id: 1 },
+                },
+            }),
+            /Expected one pull request for workflow run, found 0/u,
+        );
+    });
+
     test("uses the pull request from a direct event", async () => {
         const mock = createOctokitMock();
         const pullNumber = await resolvePullNumber(

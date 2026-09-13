@@ -27,10 +27,20 @@ async function run(): Promise<void> {
         return;
     }
 
+    const { data: pullRequest } = await octokit.rest.pulls.get({
+        owner,
+        repo,
+        pull_number: pullNumber,
+    });
+
+    if (pullRequest.state === "closed") {
+        core.info(`Skipping closed pull request #${pullNumber}`);
+        return;
+    }
+
     await createMissingLabels(octokit, owner, repo);
 
-    const [{ data: pullRequest }, relevantReview, labels] = await Promise.all([
-        octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber }),
+    const [relevantReview, labels] = await Promise.all([
         getLatestRelevantReview(octokit, owner, repo, pullNumber),
         // GH represents PRs as a special type of issue internally
         octokit.paginate(octokit.rest.issues.listLabelsOnIssue, {
