@@ -86,3 +86,10 @@ npm run build
 ```
 
 `npm run build` bundles the action and all runtime dependencies into the committed `dist/index.js`. CI verifies the tests, lint checking, and that rebuilding does not change the committed bundle.
+
+### Update existing tag
+
+```sh
+git tag -f v1.4.0
+git push origin refs/tags/v1.4.0 --force
+```
