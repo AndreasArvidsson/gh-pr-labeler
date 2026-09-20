@@ -23,7 +23,9 @@ async function run(): Promise<void> {
     );
 
     if (pullNumber == null) {
-        core.info(`Ignoring unsupported ${github.context.eventName} event`);
+        core.info(
+            `Skipping event ${github.context.eventName} because no pull request could be resolved`,
+        );
         return;
     }
 

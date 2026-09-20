@@ -77,7 +77,11 @@ export async function resolvePullNumber(
         }
     }
 
-    if (pullRequestNumbers.size !== 1) {
+    if (pullRequestNumbers.size === 0) {
+        return undefined;
+    }
+
+    if (pullRequestNumbers.size > 1) {
         throw new Error(
             `Expected one pull request for workflow run, found ${pullRequestNumbers.size}`,
         );

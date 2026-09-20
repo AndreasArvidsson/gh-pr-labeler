@@ -132,24 +132,30 @@ suite("resolvePullNumber", () => {
         });
     }
 
-    test("does not resolve a closed PR from a reused branch without commit evidence", async () => {
+    test("skips a closed PR from a reused branch without commit evidence", async () => {
         const mock = createOctokitMock([], [], {}, [
             {
                 number: 42,
                 head: { ref: "feature", sha: "old-head", repo: { id: 1 } },
             },
         ]);
-        await assert.rejects(
-            resolvePullNumber(mock.octokit, "owner", "repo", "workflow_run", {
-                workflow_run: {
-                    conclusion: "success",
-                    event: "pull_request_review",
-                    head_sha: "new-head",
-                    head_branch: "feature",
-                    head_repository: { id: 1 },
+        assert.equal(
+            await resolvePullNumber(
+                mock.octokit,
+                "owner",
+                "repo",
+                "workflow_run",
+                {
+                    workflow_run: {
+                        conclusion: "success",
+                        event: "pull_request_review",
+                        head_sha: "new-head",
+                        head_branch: "feature",
+                        head_repository: { id: 1 },
+                    },
                 },
-            }),
-            /Expected one pull request for workflow run, found 0/u,
+            ),
+            undefined,
         );
     });
 
@@ -340,8 +346,67 @@ suite("resolvePullNumber", () => {
         ]);
     });
 
+    test("skips an unverified fork branch for a dismissed review", async () => {
+        const mock = createOctokitMock(
+            [],
+            [
+                {
+                    number: 2317,
+                    head: {
+                        ref: "antigravity",
+                        sha: "656bb9089f23acd7ed0e68e75a573a0f78599793",
+                        repo: { id: 905_965_742 },
+                    },
+                },
+                {
+                    number: 2318,
+                    head: {
+                        ref: "other",
+                        sha: "other-head",
+                        repo: { id: 2 },
+                    },
+                },
+            ],
+            {
+                2317: [
+                    {
+                        commit_id: "02772cc2a52ff628738528aa3181da5ffcd08b7b",
+                    },
+                ],
+            },
+        );
+
+        assert.equal(
+            await resolvePullNumber(
+                mock.octokit,
+                "talonhub",
+                "community",
+                "workflow_run",
+                {
+                    workflow_run: {
+                        conclusion: "success",
+                        event: "pull_request_review",
+                        head_sha: "cc2dcaa9afcef6ffb084ae0aad9e34e2cf836fea",
+                        head_branch: "antigravity",
+                        head_repository: { id: 240_185_541 },
+                        pull_requests: [],
+                    },
+                },
+            ),
+            undefined,
+        );
+        assert.deepEqual(mock.requestedReviewLists, [
+            {
+                owner: "talonhub",
+                repo: "community",
+                pull_number: 2317,
+                per_page: 100,
+            },
+        ]);
+    });
+
     for (const matchingReviews of [false, true]) {
-        test(`rejects ${matchingReviews ? "ambiguous" : "missing"} review commit matches`, async () => {
+        test(`${matchingReviews ? "rejects ambiguous" : "skips missing"} review commit matches`, async () => {
             const reviews = matchingReviews ? [{ commit_id: "old-head" }] : [];
             const mock = createOctokitMock(
                 [],
@@ -366,26 +431,29 @@ suite("resolvePullNumber", () => {
                 { 41: reviews, 42: reviews },
             );
 
-            await assert.rejects(
-                resolvePullNumber(
-                    mock.octokit,
-                    "owner",
-                    "repo",
-                    "workflow_run",
-                    {
-                        workflow_run: {
-                            conclusion: "success",
-                            event: "pull_request_review",
-                            head_sha: "old-head",
-                            head_branch: "feature",
-                            head_repository: { id: 1 },
-                        },
-                    },
-                ),
+            const resolution = resolvePullNumber(
+                mock.octokit,
+                "owner",
+                "repo",
+                "workflow_run",
                 {
-                    message: `Expected one pull request for workflow run, found ${matchingReviews ? 2 : 0}`,
+                    workflow_run: {
+                        conclusion: "success",
+                        event: "pull_request_review",
+                        head_sha: "old-head",
+                        head_branch: "feature",
+                        head_repository: { id: 1 },
+                    },
                 },
             );
+            if (matchingReviews) {
+                await assert.rejects(resolution, {
+                    message:
+                        "Expected one pull request for workflow run, found 2",
+                });
+            } else {
+                assert.equal(await resolution, undefined);
+            }
         });
     }
 
@@ -442,37 +510,49 @@ suite("resolvePullNumber", () => {
         );
     });
 
-    test("rejects a branch belonging only to a different fork", async () => {
+    test("skips a branch belonging only to a different fork", async () => {
         const mock = createOctokitMock(
             [],
             [{ number: 41, head: { ref: "feature", repo: { id: 2 } } }],
         );
 
-        await assert.rejects(
-            resolvePullNumber(mock.octokit, "owner", "repo", "workflow_run", {
-                workflow_run: {
-                    conclusion: "success",
-                    event: "pull_request",
-                    head_branch: "feature",
-                    head_repository: { id: 1 },
+        assert.equal(
+            await resolvePullNumber(
+                mock.octokit,
+                "owner",
+                "repo",
+                "workflow_run",
+                {
+                    workflow_run: {
+                        conclusion: "success",
+                        event: "pull_request",
+                        head_branch: "feature",
+                        head_repository: { id: 1 },
+                    },
                 },
-            }),
-            /Expected one pull request for workflow run, found 0/u,
+            ),
+            undefined,
         );
     });
 
-    test("rejects a workflow run without an associated pull request", async () => {
+    test("skips a workflow run without an associated pull request", async () => {
         const mock = createOctokitMock();
 
-        await assert.rejects(
-            resolvePullNumber(mock.octokit, "owner", "repo", "workflow_run", {
-                workflow_run: {
-                    conclusion: "success",
-                    event: "pull_request",
-                    head_sha: "unassociated-head",
+        assert.equal(
+            await resolvePullNumber(
+                mock.octokit,
+                "owner",
+                "repo",
+                "workflow_run",
+                {
+                    workflow_run: {
+                        conclusion: "success",
+                        event: "pull_request",
+                        head_sha: "unassociated-head",
+                    },
                 },
-            }),
-            /Expected one pull request for workflow run, found 0/u,
+            ),
+            undefined,
         );
     });
 
