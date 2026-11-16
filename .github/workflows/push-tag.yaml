@@ -38,5 +38,8 @@ jobs:
 
       - name: Push Git tag
         run: |
-          git tag "${{ env.version }}"
-          git push origin "${{ env.version }}"
+          VERSION="${{ env.version }}"
+          MINOR_VERSION="${VERSION%.*}"
+          git tag "$VERSION"
+          git tag --force "$MINOR_VERSION"
+          git push --atomic origin "$VERSION" "+$MINOR_VERSION"
