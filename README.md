@@ -70,7 +70,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Update PR labels
-              uses: AndreasArvidsson/gh-pr-labeler@v1.4.0
+              uses: AndreasArvidsson/gh-pr-labeler@v1.5.0
 ```
 
 Both workflows must exist on the default branch. The first workflow has no repository permissions and does not check out or execute PR code. The second workflow runs from the trusted default branch, fetches current PR and review data through GitHub's API, and uses its write-capable `GITHUB_TOKEN` to update labels. Keep this labeling workflow limited to trusted code; do not check out or execute PR code in it.
@@ -93,6 +93,6 @@ npm run build
 ### Update existing tag
 
 ```sh
-git tag -f v1.4.0
-git push origin refs/tags/v1.4.0 --force
+git tag -f v1.5.0
+git push origin refs/tags/v1.5.0 --force
 ```
