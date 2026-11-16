@@ -1,6 +1,6 @@
 {
     "name": "gh-pr-labeler",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "private": true,
     "description": "Reusable GitHub Action for pull request lines and review-state labels",
     "main": "dist/index.js",
