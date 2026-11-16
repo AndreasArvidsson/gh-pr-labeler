@@ -9,7 +9,11 @@ suite("getPullRequest", () => {
             states: [false],
             calls: 1,
         },
-        { name: "returns a mergeable PR immediately", states: [true], calls: 1 },
+        {
+            name: "returns a mergeable PR immediately",
+            states: [true],
+            calls: 1,
+        },
         {
             name: "retries unknown mergeability",
             states: [null, null, false],
@@ -29,7 +33,11 @@ suite("getPullRequest", () => {
             const octokit = {
                 rest: {
                     pulls: {
-                        get: (parameters: unknown): Promise<{ data: { state: string; mergeable: boolean | null } }> => {
+                        get: (
+                            parameters: unknown,
+                        ): Promise<{
+                            data: { state: string; mergeable: boolean | null };
+                        }> => {
                             assert.deepEqual(parameters, {
                                 owner: "owner",
                                 repo: "repo",
@@ -66,7 +74,9 @@ suite("getPullRequest", () => {
         const octokit = {
             rest: {
                 pulls: {
-                    get: (): Promise<{ data: { state: string; mergeable: boolean | null } }> =>
+                    get: (): Promise<{
+                        data: { state: string; mergeable: boolean | null };
+                    }> =>
                         Promise.resolve({
                             data: { state: "closed", mergeable: null },
                         }),

@@ -16,7 +16,7 @@ The action creates its labels automatically when they are first needed.
 | ![lines/1000+](https://img.shields.io/badge/lines%2F1000%2B-d93f0b)                                                        | At least 1,000 changed lines                                |
 | ![review/changes-requested](https://img.shields.io/badge/review%2Fchanges--requested-d73a4a)                               | A reviewer requested changes                                |
 | ![review/updated-after-changes-requested](https://img.shields.io/badge/review%2Fupdated--after--changes--requested-0e8a16) | The PR creator pushed a commit after changes were requested |
-| ![merge-conflicts](https://img.shields.io/badge/merge--conflicts-d73a4a) | The PR has merge conflicts with its base branch |
+| ![merge-conflicts](https://img.shields.io/badge/merge--conflicts-d73a4a)                                                   | The PR has merge conflicts with its base branch             |
 
 PR size is `additions + deletions`. Lines is recalculated when a PR is opened, reopened, or synchronized, and exactly one `lines/` label is retained.
 
