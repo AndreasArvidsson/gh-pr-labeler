@@ -1,11 +1,39 @@
 import assert from "node:assert/strict";
 import { getLabelTransition } from "../src/getLabelTransition.js";
+import { MERGE_CONFLICTS_LABEL } from "../src/mergeLabels.js";
 import {
     CHANGES_REQUESTED_LABEL,
     UPDATED_AFTER_CHANGES_REQUESTED_LABEL,
 } from "../src/reviewLabels.js";
 
 suite("getLabelTransition", () => {
+    for (const mergeable of [true, false, null, undefined]) {
+        for (const hasConflictLabel of [true, false]) {
+            test(`updates conflicts for mergeable=${mergeable}, existing label=${hasConflictLabel}`, () => {
+                const transition = getLabelTransition(
+                    { number: 42, additions: 1, deletions: 0, mergeable },
+                    undefined,
+                    new Set(
+                        hasConflictLabel
+                            ? [MERGE_CONFLICTS_LABEL, "bug"]
+                            : ["bug"],
+                    ),
+                    false,
+                );
+                assert.equal(
+                    transition.add.includes(MERGE_CONFLICTS_LABEL),
+                    mergeable === false,
+                );
+                assert.equal(
+                    transition.remove.includes(MERGE_CONFLICTS_LABEL),
+                    mergeable === true,
+                );
+                assert.ok(!transition.remove.includes("bug"));
+                assert.ok(transition.add.includes("lines/<10"));
+            });
+        }
+    }
+
     test("keeps changes requested when only other authors added commits", () => {
         const transition = getLabelTransition(
             { number: 42, additions: 1, deletions: 0 },

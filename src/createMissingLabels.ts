@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import type { GitHub } from "@actions/github/lib/utils";
 import { getErrorStatus } from "./getErrorStatus";
 import { LINES_LABELS } from "./linesLabels";
+import { MERGE_LABELS } from "./mergeLabels.js";
 import { REVIEW_LABELS } from "./reviewLabels";
 import type { LabelDefinition } from "./types";
 
@@ -13,6 +14,7 @@ export async function createMissingLabels(
     const labels: readonly LabelDefinition[] = [
         ...LINES_LABELS,
         ...REVIEW_LABELS,
+        ...MERGE_LABELS,
     ];
 
     for (const label of labels) {

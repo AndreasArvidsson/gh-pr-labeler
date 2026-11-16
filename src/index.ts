@@ -4,6 +4,7 @@ import { createMissingLabels } from "./createMissingLabels.js";
 import { getErrorStatus } from "./getErrorStatus.js";
 import { getLabelTransition } from "./getLabelTransition.js";
 import { getLatestRelevantReview } from "./getLatestRelevantReview.js";
+import { getPullRequest } from "./getPullRequest.js";
 import { hasAuthorCommitSinceReview } from "./hasAuthorCommitSinceReview.js";
 import { resolvePullNumber } from "./resolvePullNumber.js";
 import type { ActionPayload } from "./types.js";
@@ -29,15 +30,17 @@ async function run(): Promise<void> {
         return;
     }
 
-    const { data: pullRequest } = await octokit.rest.pulls.get({
-        owner,
-        repo,
-        pull_number: pullNumber,
-    });
+    const pullRequest = await getPullRequest(octokit, owner, repo, pullNumber);
 
     if (pullRequest.state === "closed") {
         core.info(`Skipping closed pull request #${pullNumber}`);
         return;
+    }
+
+    if (pullRequest.mergeable == null) {
+        core.warning(
+            `Mergeability is still unknown for #${pullNumber}; leaving the merge-conflict label unchanged`,
+        );
     }
 
     await createMissingLabels(octokit, owner, repo);
@@ -67,6 +70,7 @@ async function run(): Promise<void> {
             number: pullRequest.number,
             additions: pullRequest.additions,
             deletions: pullRequest.deletions,
+            mergeable: pullRequest.mergeable,
         },
         relevantReview,
         currentLabels,

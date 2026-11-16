@@ -6,6 +6,7 @@ export interface PullRequestPayload {
     readonly number: number;
     readonly additions: number;
     readonly deletions: number;
+    readonly mergeable?: boolean | null;
 }
 
 export interface WorkflowRunPayload {

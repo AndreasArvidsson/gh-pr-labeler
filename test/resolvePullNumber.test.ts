@@ -159,21 +159,25 @@ suite("resolvePullNumber", () => {
         );
     });
 
-    test("uses the pull request from a direct event", async () => {
-        const mock = createOctokitMock();
-        const pullNumber = await resolvePullNumber(
-            mock.octokit,
-            "owner",
-            "repo",
-            "pull_request",
-            {
-                pull_request: { number: 42, additions: 1, deletions: 2 },
-            },
-        );
+    for (const eventName of ["pull_request", "pull_request_target"]) {
+        test(`uses the pull request from a direct ${eventName} event`, async () => {
+            const mock = createOctokitMock();
+            const pullNumber = await resolvePullNumber(
+                mock.octokit,
+                "owner",
+                "repo",
+                eventName,
+                {
+                    pull_request: { number: 42, additions: 1, deletions: 2 },
+                },
+            );
 
-        assert.equal(pullNumber, 42);
-        assert.deepEqual(mock.requestedCommitShas, []);
-    });
+            assert.equal(pullNumber, 42);
+            assert.deepEqual(mock.requestedCommitShas, []);
+            assert.deepEqual(mock.requestedPullLists, []);
+            assert.deepEqual(mock.requestedReviewLists, []);
+        });
+    }
 
     test("uses the pull request included in a workflow run", async () => {
         const mock = createOctokitMock();

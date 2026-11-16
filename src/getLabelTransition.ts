@@ -1,5 +1,6 @@
 import { REVIEW_CHANGES_REQUESTED } from "./constants.js";
 import { LINES_LABEL_PREFIX, getLinesLabel } from "./linesLabels.js";
+import { MERGE_CONFLICTS_LABEL } from "./mergeLabels.js";
 import {
     CHANGES_REQUESTED_LABEL,
     UPDATED_AFTER_CHANGES_REQUESTED_LABEL,
@@ -21,6 +22,12 @@ export function getLabelTransition(
     const numChangedLines = pullRequest.additions + pullRequest.deletions;
     const linesLabel = getLinesLabel(numChangedLines);
     add.add(linesLabel);
+
+    if (pullRequest.mergeable === false) {
+        add.add(MERGE_CONFLICTS_LABEL);
+    } else if (pullRequest.mergeable === true) {
+        remove.add(MERGE_CONFLICTS_LABEL);
+    }
 
     // Remove any existing lines label that is different from the chosen one.
     for (const label of currentLabels) {
